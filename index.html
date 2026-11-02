@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1233BB" />
+    <meta name="description" content="REAL LIFE KNIFE ATTACK. An interactive video terminal. Event information and artist music links." />
+    <title>REAL LIFE KNIFE ATTACK</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <main class="poster-fallback" id="poster-fallback" aria-label="REAL LIFE KNIFE ATTACK poster">
+      <img src="/assets/images/rlka-wide.png" width="2481" height="3508" alt="REAL LIFE KNIFE ATTACK. Blue and white illustration with a grinning skull and a protruding knife." fetchpriority="high" />
+      <noscript>
+        <p><a href="https://reallifeknifeattack.bandcamp.com/" target="_blank" rel="noopener noreferrer">Visit REAL LIFE KNIFE ATTACK on Bandcamp</a>.</p>
+      </noscript>
+    </main>
+    <dialog class="event-dialog" id="event-dialog" aria-labelledby="event-heading">
+      <div class="dialog-screen">
+        <h2 id="event-heading">RLKA / EVENT INFORMATION</h2>
+        <dl id="event-details"></dl>
+        <div class="dialog-actions"><button type="button" id="close-event" autofocus>[ESC] CLOSE</button></div>
+      </div>
+    </dialog>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

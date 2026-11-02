@@ -1,0 +1,123 @@
+/* Poster layout, supplied fonts, accessible controls, and dialog presentation. */
+/*! IBM VGA: VileR (2020), https://int10h.org/oldschool-pc-fonts/ — CC BY-SA 4.0. See public/assets/fonts/NOTICES.txt. */
+@font-face {
+  font-family: 'IBM VGA';
+  src: url('/assets/fonts/PxPlus_IBM_VGA_9x14.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('/assets/fonts/VCR_OSD_MONO_1.001.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  /* Accented letters and non-ASCII symbols deliberately fall back to IBM VGA. */
+  unicode-range: U+0020-007E;
+}
+
+:root {
+  font-family: 'VCR OSD Mono', 'IBM VGA', monospace;
+  color: #fcfbff;
+  background: #1233bb;
+  --primary-blue: #1233bb;
+  --support-blue: #0a208d;
+  --phosphor: #fcfbff;
+  --periwinkle: #b8b7ff;
+  color-scheme: dark;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+button, select, a { -webkit-tap-highlight-color: transparent; }
+button, select { font: inherit; }
+button, a, select { touch-action: manipulation; }
+button { cursor: pointer; }
+.terminal-symbol { font-family: 'IBM VGA', monospace; font-weight: 400; }
+button:focus-visible, a:focus-visible, select:focus-visible {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 3px;
+}
+
+.poster-fallback { min-height: 100svh; display: grid; justify-items: center; align-content: center; }
+.poster-fallback img { display: block; max-width: 100%; max-height: 100svh; width: auto; height: auto; }
+.poster-fallback p { padding: 16px; }
+.poster-fallback a { color: inherit; }
+
+.event-dialog {
+  position: fixed;
+  top: auto;
+  bottom: 16px;
+  width: min(560px, calc(100vw - 28px));
+  max-height: calc(100svh - 32px);
+  margin: auto;
+  padding: 3px;
+  border: 2px solid var(--periwinkle);
+  border-radius: 0;
+  background: var(--support-blue);
+  color: var(--phosphor);
+  font-size: clamp(18px, 2.3vw, 25px);
+  overflow-y: auto;
+}
+.event-dialog::backdrop { background: rgb(10 32 141 / .18); }
+.dialog-screen { border: 1px solid var(--periwinkle); }
+.event-dialog h2 {
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--periwinkle);
+  font: inherit;
+}
+.event-dialog dl { padding: 12px 16px; margin: 0; }
+.event-dialog dl > div { display: grid; grid-template-columns: 9ch 1fr; padding: 5px 0; }
+.event-dialog dd { margin: 0; overflow-wrap: anywhere; }
+.event-dialog a { color: inherit; }
+.selected-field { color: #fff; }
+.field-marker { position: absolute; margin-left: -1ch; visibility: hidden; }
+.selected-field .field-marker { visibility: visible; }
+.dialog-actions { padding: 8px 16px; border-top: 2px solid var(--periwinkle); }
+.dialog-actions button { padding: 5px 0; border: 0; border-radius: 0; color: inherit; background: transparent; }
+
+/* The transparent native dialog handles input; its canvas supplies the picture. */
+.event-dialog.canvas-dialog { margin: 0; padding: 0; bottom: auto; max-width: none; max-height: none; border: 0; background: transparent; overflow: hidden; outline: none; }
+.event-dialog.canvas-dialog::backdrop { background: transparent; }
+.canvas-dialog .dialog-screen { position: relative; height: 100%; border: 0; background: none; text-shadow: none; }
+.canvas-dialog #event-heading { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.dialog-raster { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.canvas-dialog[data-processed="true"] .dialog-raster { opacity: 0; }
+.dialog-native-scroll { position: absolute; left: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain; opacity: 0; scrollbar-width: none; }
+.canvas-dialog dl { position: relative; padding: 0; margin: 0; }
+.canvas-dialog dl > div { position: absolute; left: 0; width: 100%; overflow: hidden; }
+.canvas-dialog .artist-link { position: absolute; inset: 0; display: block; color: transparent; background: transparent; outline: none; }
+.canvas-dialog .dialog-actions { position: absolute; left: 0; bottom: 0; width: 100%; padding: 0; border: 0; }
+.canvas-dialog .dialog-actions button { position: absolute; top: 0; height: 100%; padding: 0; color: transparent; background: transparent; text-shadow: none; outline: none; }
+/* Focus is painted in the canvas, so its native hit target stays transparent. */
+.event-dialog:not(.canvas-dialog) .dialog-actions button:hover,
+.event-dialog:not(.canvas-dialog) .dialog-actions button:focus-visible { background: var(--phosphor); color: var(--support-blue); }
+
+.poster-screen { position: relative; width: 100%; height: 100svh; min-height: 700px; overflow: hidden; background: var(--primary-blue); }
+.screen-background { position: absolute; inset: 0; background-position: center; background-size: cover; pointer-events: none; }
+.screen-poster { position: absolute; left: 50%; top: 46%; translate: var(--poster-offset-x, -50%) var(--poster-offset-y, -50%); overflow: hidden; }
+.screen-poster img { position: absolute; max-width: none; height: auto; }
+.screen-title, .poster-bill { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.poster-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.menu-visual, .poster-menu { position: absolute; }
+.poster-menu { z-index: 2; }
+.poster-menu .menu-row { position: absolute; left: 0; width: 100%; min-height: 0; display: block; padding: 0; margin: 0; border: 0; border-radius: 0; color: transparent; background: transparent; box-shadow: none; outline: none; cursor: pointer; }
+.screen-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.poster-screen[data-renderer="webgl"][data-comparison="processed"] .poster-art,
+.poster-screen[data-renderer="webgl"][data-comparison="processed"] .menu-visual { opacity: 0; }
+.screen-controls { position: absolute; z-index: 5; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; }
+.screen-pause { min-height: 44px; min-width: 44px; padding: 10px 12px; border: 0; border-radius: 0; font: inherit; font-size: 12px; white-space: nowrap; color: var(--phosphor); background: var(--support-blue); }
+.screen-pause:enabled:hover { color: var(--support-blue); background: var(--phosphor); }
+.screen-pause:disabled { cursor: default; }
+@media (max-width: 600px) {
+  .poster-screen { min-height: 900px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
