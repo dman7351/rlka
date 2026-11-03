@@ -2,7 +2,7 @@
 
 The generated JavaScript bindings in this directory and the WebAssembly in
 `public/assets/effects/ntsc-rs/` are an unmodified, matching pair from the upstream
-ntsc-rs web deployment. RLKA supplies its own small worker and UI; it does not
+ntsc-rs web deployment. RLKA uses a custom worker and interface; it does not
 include the upstream Preact editor, rendering/export system or video codecs.
 
 - Source: https://github.com/ntsc-rs/ntsc-rs-web

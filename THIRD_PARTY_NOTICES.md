@@ -1,8 +1,8 @@
 # REAL LIFE KNIFE ATTACK — asset rights and third-party notices
 
-Original artwork and the README illustration were supplied by the project owner.
+The artwork, PNG logo and favicon, and README illustration are original project assets.
 The third-party permissions below do not grant a license to that artwork or to
-the project as a whole. The supplied artwork and font files are unchanged.
+the project as a whole. Artwork and font files are distributed unchanged.
 
 ## ntsc-rs / ntsc-rs-web-wrapper
 
@@ -55,7 +55,7 @@ License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0
 https://creativecommons.org/licenses/by-sa/4.0/
 Author's terms: https://int10h.org/oldschool-pc-fonts/readme/#legal_stuff
 
-The supplied font is distributed unchanged in public/assets/fonts/.
+The font is distributed unchanged in public/assets/fonts/.
 
 ## VCR OSD Mono
 
@@ -64,9 +64,18 @@ Source: https://www.dafont.com/vcr-osd-mono.font
 The author's public comment dated 2017-02-24 confirms free commercial use:
 https://www.dafont.com/font-comment.php?file=vcr_osd_mono
 
-The supplied font is distributed unchanged in public/assets/fonts/.
-The favicon's R outline was extracted from this font.
-No separate license text was included with the supplied VCR file; this notice
+The font is distributed unchanged in public/assets/fonts/.
+The legacy public/assets/favicon.svg R outline was extracted from this font.
+No separate license text accompanies the VCR font file; this notice
 records the author's published permission rather than assigning a new license.
 
 Font attribution is also distributed in public/assets/fonts/NOTICES.txt.
+
+## Edit Undo font family
+
+The font files editundo.ttf (Edit Undo BRK), edundot.ttf (Edit Undo Dot BRK),
+and edunline.ttf (Edit Undo Line BRK) are included in public/assets/fonts/. Their embedded
+copyright metadata credits ÆNIGMA FONTS, contact kentpw@norwich.net.
+The files are unchanged in public/assets/fonts/. The current boot logo and
+favicon use PNG assets; the application does not load these
+additional font files at runtime. No separate license text accompanied them.

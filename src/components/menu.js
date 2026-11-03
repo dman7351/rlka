@@ -1,7 +1,7 @@
-// Native event and LINKS buttons share one pointer/keyboard selection.
+// Native event, LINKS, and footer controls share pointer/keyboard selection.
 import { eventFields, getEventValue } from '../config/event.js';
 
-export function createMenu(container, eventInfo, { onEvent, onLinks, onSelect }) {
+export function createMenu(container, eventInfo, { onEvent, onLinks, onSelect, extraItems = [], controlRoot = container }) {
   const items = eventFields.map(({ key, label }) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -33,6 +33,7 @@ export function createMenu(container, eventInfo, { onEvent, onLinks, onSelect })
   });
   items.push(links);
   container.replaceChildren(...items);
+  items.push(...extraItems);
 
   let selected = null;
   let hovered = null;
@@ -46,6 +47,7 @@ export function createMenu(container, eventInfo, { onEvent, onLinks, onSelect })
   }
 
   for (const item of items) {
+    if (extraItems.includes(item)) item.addEventListener('click', () => select(item));
     const point = (event) => {
       if (event.pointerType === 'touch') return;
       hovered = item;
@@ -62,16 +64,21 @@ export function createMenu(container, eventInfo, { onEvent, onLinks, onSelect })
     item.addEventListener('focus', () => select(item));
   }
 
-  container.addEventListener('focusout', (event) => {
+  controlRoot.addEventListener('focusout', (event) => {
     if (items.includes(event.relatedTarget)) return;
     // Retain the chosen row behind its modal; closing restores native focus.
     if (selected?.getAttribute('aria-expanded') === 'true') return;
     select(hovered);
   });
 
-  container.addEventListener('keydown', (event) => {
+  controlRoot.addEventListener('keydown', (event) => {
     const index = items.indexOf(document.activeElement);
     if (index < 0 || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === ' ' && document.activeElement.matches('a[href]')) {
+      event.preventDefault();
+      document.activeElement.click();
+      return;
+    }
     let next;
     if (event.key === 'ArrowDown') next = (index + 1) % items.length;
     if (event.key === 'ArrowUp') next = (index - 1 + items.length) % items.length;

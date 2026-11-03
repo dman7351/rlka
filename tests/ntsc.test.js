@@ -6,7 +6,7 @@ import { initSync, NtscEffectBuf, NtscSettingsList, ResizeFilter, Rotation } fro
 const preset = JSON.parse(await readFile(new URL('../src/config/ntsc-rs-preset.json', import.meta.url)));
 const engine = initSync({ module: await readFile(new URL('../public/assets/effects/ntsc-rs/ntsc_rs_web_wrapper_bg.wasm', import.meta.url)) });
 
-test('the shipped ntsc-rs engine preserves every field of the supplied preset', () => {
+test('the bundled ntsc-rs engine preserves every field of the saved preset', () => {
   const list = new NtscSettingsList();
   try {
     assert.deepEqual(JSON.parse(list.parsePreset(JSON.stringify(preset))), preset);
@@ -18,7 +18,8 @@ test('real ntsc-rs processing preserves framing, evolves by frame time and reuse
   const list = new NtscSettingsList();
   const effect = new NtscEffectBuf();
   const width = 192;
-  const height = 144;
+  // Leave room below the framing samples for the wider bottom tracking strip.
+  const height = 288;
   try {
     effect.setEffectSettings(list.settingsFromJSON(JSON.stringify(preset)));
     const source = new Uint8Array(width * height * 4);
@@ -40,8 +41,8 @@ test('real ntsc-rs processing preserves framing, evolves by frame time and reuse
     assert.deepEqual(frame(0), first, 'a frozen source/time gives a reproducible still');
     assert.notDeepEqual(frame(30), first, 'elapsed frame time drives actual signal artifacts');
     const pixel = (image, x, y) => image.subarray((y * width + x) * 4, (y * width + x) * 4 + 3);
-    const top = pixel(first, 100, 35);
-    const bottom = pixel(first, 100, 100);
+    const top = pixel(first, 100, 70);
+    const bottom = pixel(first, 100, 200);
     assert.ok(top[0] > top[2] + 80, 'upper red region remains upper');
     assert.ok(bottom[2] > bottom[0] + 80, 'lower blue region remains lower');
     const allocated = engine.memory.buffer.byteLength;

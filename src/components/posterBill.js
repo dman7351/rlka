@@ -77,7 +77,11 @@ export function createPosterBill(context, info, width, style) {
   };
 }
 
-export function drawPosterFooter(context, text, x, top, width, style, ink, paper) {
+export function footerBannerBounds(width, style) {
+  return { x: width - style.bannerWidth, y: (style.height - style.bannerHeight) / 2, width: style.bannerWidth, height: style.bannerHeight };
+}
+
+export function drawPosterFooter(context, text, x, top, width, style, ink, paper, active = false) {
   context.save();
   context.strokeStyle = paper;
   context.lineWidth = 4;
@@ -102,10 +106,20 @@ export function drawPosterFooter(context, text, x, top, width, style, ink, paper
     } else terminalText(context, 'null', x + labelWidth + 12, middle, style.fontSize, paper);
   }
   if (text) {
-    const left = x + width - style.bannerWidth;
-    const middle = top + style.height / 2;
-    context.fillStyle = paper;
-    context.fillRect(left, middle - style.bannerHeight / 2, style.bannerWidth, style.bannerHeight);
-    terminalText(context, text, left + style.bannerWidth / 2, middle, style.bannerFontSize, ink, 'center');
+    const box = footerBannerBounds(width, style);
+    const left = x + box.x;
+    const y = top + box.y;
+    const middle = y + box.height / 2;
+    context.save();
+    context.strokeStyle = paper;
+    context.lineWidth = style.bannerBorder;
+    context.strokeRect(left + style.bannerBorder / 2, y + style.bannerBorder / 2, box.width - style.bannerBorder, box.height - style.bannerBorder);
+    context.fillStyle = ink;
+    context.fillRect(left + style.bannerBorder, y + style.bannerBorder, box.width - style.bannerBorder * 2, box.height - style.bannerBorder * 2);
+    context.fillStyle = active ? ink : paper;
+    context.fillRect(left + style.bannerPadding, y + style.bannerPadding, box.width - style.bannerPadding * 2, box.height - style.bannerPadding * 2);
+    const color = active ? paper : ink;
+    terminalText(context, text, left + box.width / 2, middle, style.bannerFontSize, color, 'center');
+    context.restore();
   }
 }

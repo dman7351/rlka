@@ -5,7 +5,7 @@ import { screenShader } from './shaders/screen.js';
 import { createNtscSignal } from './ntscSignal.js';
 import { createMotionClock, cyclePhase } from './motionClock.js';
 
-export function createScreenRenderer(stage, poster, background, config, onLost, stagedMenu = null, stagedDialog = null) {
+export function createScreenRenderer(stage, poster, background, config, onLost, stagedMenu = null, stagedDialog = null, frameImage = null, boot = null) {
   const canvas = document.createElement('canvas');
   canvas.className = 'screen-canvas';
   canvas.setAttribute('aria-hidden', 'true');
@@ -33,6 +33,7 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
   let signalTextureWidth = 0;
   let signalTextureHeight = 0;
   let hasSignalFrame = false;
+  let signalRevision = -1;
   let lastSignalRequest = -Infinity;
   let signalDirty = true;
   let revision = 0;
@@ -148,7 +149,9 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  let compose, crt, front, forest, picture, signal, menuTexture, menuUpload, dialogTexture;
+  let compose, crt, front, forest, picture, signal, signalSource, pendingSource, menuTexture, menuUpload, dialogTexture, frameTexture, bootTexture;
+  let bootTextureWidth = 0;
+  let bootTextureHeight = 0;
   let dialogTextureWidth = 1;
   let dialogTextureHeight = 1;
   try {
@@ -160,12 +163,16 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
     crt = program(screenShader);
     front = texture(poster);
     forest = texture(background);
+    frameTexture = texture(frameImage || document.createElement('canvas'));
+    bootTexture = texture(boot?.canvas || document.createElement('canvas'));
     menuUpload = stagedMenu ? fitTextureImage(stagedMenu.menu) : document.createElement('canvas');
     menuTexture = texture(menuUpload);
     dialogTexture = texture(stagedDialog?.canvas || document.createElement('canvas'));
     picture = target();
     signal = texture();
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    signalSource = texture();
+    pendingSource = texture();
   } catch (error) {
     dispose();
     throw error;
@@ -177,16 +184,22 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
     const crop = config.foregroundBounds;
     const box = stage.querySelector('.screen-poster').getBoundingClientRect();
     const rect = stage.getBoundingClientRect();
+    const frame = frameImage && !frameImage.hidden ? frameImage.getBoundingClientRect() : null;
     const scale = Math.min(1, (width / height) / (background.naturalWidth / background.naturalHeight));
     const backgroundScale = width / height > background.naturalWidth / background.naturalHeight
       ? [1, (background.naturalWidth / background.naturalHeight) / (width / height)]
       : [scale, 1];
     pass(compose, picture, {
       size: [sourceWidth, sourceHeight],
+      bootReveal: boot?.reveal ?? 1,
+      bootOpacity: boot?.opacity ?? 1,
+      bootShift: config.bootShift,
+      bootDim: config.bootDim,
       foreground: [(box.left - rect.left) / width, (box.top - rect.top) / height, box.width / width, box.height / height],
       crop: [crop.x / posterWidth, crop.y / posterHeight, crop.width / posterWidth, crop.height / posterHeight],
       menuRect: stagedMenu?.menuRect || [0, 0, 0, 0],
       dialogRect: stagedDialog?.rect(rect) || [0, 0, 0, 0],
+      frameRect: frame ? [(frame.left - rect.left) / width, (frame.top - rect.top) / height, frame.width / width, frame.height / height] : [0, 0, 0, 0],
       backgroundScale,
       backgroundAmount: config.backgroundAmount,
       baseBlue: config.baseBlue,
@@ -197,7 +210,7 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       fmPhase: cyclePhase(time, config.fmSpeed),
       fmWaveFrequency: config.fmWaveFrequency, fmDistortion: config.fmDistortion,
       textDither: config.textDither,
-    }, [['poster', front], ['background', forest], ['menu', menuTexture], ['dialog', dialogTexture]]);
+    }, [['poster', front], ['background', forest], ['menu', menuTexture], ['dialog', dialogTexture], ['frame', frameTexture], ['boot', bootTexture]]);
     dirty = false;
     signalDirty = true;
   }
@@ -210,11 +223,15 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       renderSource(time);
       lastSource = now;
     }
-    if (config.signalMix > 0 && processor?.available && (!hasSignalFrame ||
+    if (config.signalMix > 0 && processor?.available && (!hasSignalFrame || signalRevision !== revision ||
         ((!motion && signalDirty) || (motion && now - lastSignalRequest >= processor.intervalMs)))) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, picture.f);
       const buffer = processor.inputBuffer(sourceWidth * sourceHeight * 4);
       gl.readPixels(0, 0, sourceWidth, sourceHeight, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
+      // Keep the clean source paired with its asynchronous processed result.
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, pendingSource);
+      gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, sourceWidth, sourceHeight);
       processor.submit(sourceWidth, sourceHeight, Math.floor(time * config.signalTimebase), revision);
       signalDirty = false;
       lastSignalRequest = now;
@@ -223,7 +240,9 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       ...config.display, inputSize: [sourceWidth, sourceHeight],
       dimensions: [canvas.width, canvas.height], outputGrid: [canvas.width, canvas.height, 1 / canvas.width, 1 / canvas.height],
       line: [0, config.scanlineWidth, config.scanlineContrast, 0],
-      noiseSettings: [config.display.noise, 1], vignette: [0, 0, 0], seed: Math.floor(time * 24) % 4096 + 1,
+      noiseSettings: [config.display.noise, 1],
+      vignette: [config.display.vignetting, config.display.vignettingAlpha, config.display.vignettingBlur],
+      seed: Math.floor(time * 24) % 4096 + 1,
       time: cyclePhase(time, config.scanlineSpeed / (Math.PI * 2)) * Math.PI * 2,
       rollStrength: config.rollStrength, rollWidth: config.rollWidth,
       rollSeconds, rollTime: cyclePhase(time, 1 / rollSeconds) * rollSeconds,
@@ -233,7 +252,7 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       colorSaturation: config.colorSaturation, colorBrightness: config.colorBrightness,
       textTop: textRegions[0], textBottom: textRegions[1],
       textProtection: config.textProtection,
-    }, [['source', picture.t], ['signal', signal]]);
+    }, [['source', hasSignalFrame && config.signalMix > 0 ? signalSource : picture.t], ['signal', signal]]);
     if (!motion || snapshotPresentation) {
       // Native/fixed UI can invalidate the WebGL compositor layer in
       // Chromium. Copy immediately after drawing, before its buffer is freed.
@@ -306,6 +325,10 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
         gl.bindFramebuffer(gl.FRAMEBUFFER, target.f);
         if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) throw new Error('Incomplete signal framebuffer');
       }
+      for (const source of [signalSource, pendingSource]) {
+        gl.bindTexture(gl.TEXTURE_2D, source);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sourceWidth, sourceHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      }
     }
     dirty = true;
     draw(performance.now());
@@ -326,6 +349,8 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       signalTextureHeight = frame.outputHeight;
     } else gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, frame.width, frame.outputHeight, gl.RGBA, gl.UNSIGNED_BYTE, frame.pixels);
     hasSignalFrame = true;
+    signalRevision = frame.revision;
+    [signalSource, pendingSource] = [pendingSource, signalSource];
     stage.dataset.signalMs = frame.ms.toFixed(1);
     if (!motion) draw(performance.now());
     ensureLoop();
@@ -338,6 +363,25 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
 
   return {
     resize,
+    updateBoot(painted = false) {
+      if (!boot || disposed || lost) return;
+      if (painted) {
+        const upload = fitTextureImage(boot.canvas);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, bootTexture);
+        if (upload.width !== bootTextureWidth || upload.height !== bootTextureHeight) {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, upload);
+          bootTextureWidth = upload.width;
+          bootTextureHeight = upload.height;
+        } else gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, upload);
+      }
+      hasSignalFrame = false;
+      dirty = true;
+      signalDirty = true;
+      revision++;
+      if (!motion) draw(performance.now());
+      ensureLoop();
+    },
     updateDialog() {
       if (!stagedDialog || disposed || lost) return;
       if (stagedDialog.visible) {
@@ -350,7 +394,6 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
           dialogTextureHeight = upload.height;
         } else gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, upload);
       }
-      hasSignalFrame = false;
       dirty = true;
       signalDirty = true;
       revision++;
@@ -366,8 +409,7 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, menuTexture);
       gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, menuUpload);
-      // An older processed selection must not leave a second faint cursor.
-      hasSignalFrame = false;
+      // Hold the previous complete picture until the new selection is processed.
       dirty = true;
       signalDirty = true;
       revision++;

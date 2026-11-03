@@ -7,15 +7,24 @@ Source and author: https://int10h.org/oldschool-pc-fonts/
 License: Creative Commons Attribution-ShareAlike 4.0 International.
 License link: https://creativecommons.org/licenses/by-sa/4.0/
 Author's terms: https://int10h.org/oldschool-pc-fonts/readme/#legal_stuff
-The supplied font file is distributed unchanged.
+The font file is distributed unchanged.
 
 VCR OSD Mono (VCR_OSD_MONO_1.001.ttf)
 By Riciery Leal / MrManet.
 Source: https://www.dafont.com/vcr-osd-mono.font
 Author's commercial-use permission, posted 2017-02-24:
 https://www.dafont.com/font-comment.php?file=vcr_osd_mono
-The supplied font file is distributed unchanged.
-The site's favicon R outline was extracted from this font.
-No separate license text was included with the supplied VCR font file.
+The font file is distributed unchanged.
+The R outline in public/assets/favicon.svg was extracted from this font.
+No separate license text accompanies the VCR font file.
 
 These notices describe the fonts, not a license for the entire website or artwork.
+
+
+Edit Undo font family
+Edit Undo BRK (editundo.ttf), Edit Undo Dot BRK (edundot.ttf), and
+Edit Undo Line BRK (edunline.ttf) are included in public/assets/fonts/.
+Embedded copyright metadata: ÆNIGMA FONTS, kentpw@norwich.net.
+The files are unchanged. The current logo/favicon use PNG assets;
+these additional fonts are not loaded by the application at runtime.
+No separate license text accompanied these files.

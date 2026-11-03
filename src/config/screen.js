@@ -3,6 +3,7 @@ import ntscPreset from './ntsc-rs-preset.json';
 
 export const screenConfig = {
   poster: 'assets/images/rlka-wide.png',
+  frame: 'assets/images/falling-guys.png',
   background: 'assets/images/background.png',
   foregroundBounds: { x: 514, y: 841, width: 1365, height: 1311 },
   foregroundHeight: 0.84,
@@ -27,15 +28,16 @@ export const screenConfig = {
   fmFps: 6,
   textDither: 0.025,
   ntsc: ntscPreset,
-  signalMix: 0.12,
-  signalFps: 15,
-  signalDutyCycle: 0.5,
+  // Move the complete picture; a dry/wet blend leaves unshifted ghost edges.
+  signalMix: 0.6,
+  signalFps: 24,
+  signalDutyCycle: 0.6,
   // Drive temporal artifacts by elapsed time rather than completed job count.
   signalTimebase: 30000 / 1001,
   sourceRows: 720,
   maxSourceWidth: 960,
   scanlineWidth: 2,
-  scanlineContrast: 0.21,
+  scanlineContrast: 0.1,
   scanlineSpeed: 0.3,
   rollStrength: 0.06,
   rollWidth: 0.12,
@@ -43,11 +45,16 @@ export const screenConfig = {
   fps: 24,
   maxDpr: 1.25,
   maxPixels: 1200000,
+  bootShift: 0.012,
+  bootDim: 0.16,
   display: {
     hardBloomPix: -1.8,
     hardBloomScan: -2.2,
     bloomAmount: 0.01,
     brightBoost: 1,
     noise: 0,
+    vignetting: 0.12,
+    vignettingAlpha: 0.14,
+    vignettingBlur: 0.65,
   },
 };

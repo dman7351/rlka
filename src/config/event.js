@@ -4,6 +4,7 @@ export const eventInfo = {
   location: 'Rubulad',
   city: 'Brooklyn, NYC',
   addressNote: 'DM FOR ADDRESS!!',
+  contactUrl: 'https://linktr.ee/reallifeknifeattack',
   lineup: [
     'REAL LIFE KNIFE ATTACK',
     'Klovis Gaynor & The Urinal Cakes',
@@ -11,16 +12,17 @@ export const eventInfo = {
     'Spray Bottle Fever',
   ],
   featuring: 'DJ Durtystuf',
-  menu: { date: '11/21', location: 'RUBULAD' },
+  menu: { location: 'RUBULAD' },
+  entry: '$15',
   doors: '7 PM',
   music: '8 PM',
   ticketsUrl: null,
 };
 
 export const eventFields = [
-  { key: 'date', label: 'DATE' },
+  { key: 'timestamp', label: 'TIMESTAMP' },
   { key: 'location', label: 'LOCATION' },
-  { key: 'doors', label: 'DOORS' },
+  { key: 'entry', label: 'ENTRY' },
   { key: 'music', label: 'MUSIC' },
 ];
 
@@ -29,10 +31,16 @@ export function formatEventValue(value) {
 }
 
 export function formatMenuValue(info, key) {
+  if (key === 'timestamp') {
+    const date = formatEventValue(info.date).replace(/\/\d{4}$/, '');
+    const doors = formatEventValue(info.doors).replace(/\s+/g, '');
+    return `${date} ${doors}`;
+  }
   return formatEventValue(info.menu?.[key] ?? info[key]);
 }
 
 export function getEventValue(info, key) {
+  if (key === 'timestamp') return `${formatEventValue(info.date)} / DOORS ${formatEventValue(info.doors)}`;
   return formatEventValue(key === 'location'
     ? [info.location, info.city, info.addressNote].filter(Boolean).join('\n')
     : info[key]);

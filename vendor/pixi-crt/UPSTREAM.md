@@ -19,4 +19,4 @@ This display shader is a visual CRT treatment, not a physical phosphor model.
 a function so it can run without another framebuffer/pass. Project blue-only
 channel balance is applied before these global controls, using a smooth mask
 that excludes neutral whites/greys. It is reference color grading, not a change
-to ntsc-rs's signal processing or the supplied PNGs.
+to ntsc-rs's signal processing or the PNG assets.

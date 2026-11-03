@@ -74,8 +74,7 @@ shader = shader.replace(/\n}\s*$/, `
   float blue = smoothstep(.04, .25, finalColor.b - max(finalColor.r, finalColor.g));
   vec3 gains = mix(vec3(1.0), u_blueGain, blue * u_blueCorrection);
   finalColor.rgb = clamp(finalColor.rgb * gains, 0.0, 1.0);
-  // Global saturation/contrast follow channel balance, so saturation zero
-  // really produces greyscale even when BLUE MATCH is enabled.
+  // Apply global saturation/contrast after blue channel correction.
   finalColor = adjustColor(finalColor, vec4(1.0));
   float phase = fract((1.0 - vTextureCoord.y) - u_rollTime / max(1.0, u_rollSeconds));
   float distance = min(phase, 1.0 - phase);

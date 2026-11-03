@@ -1,4 +1,4 @@
-// Flyer composition in staged canvas pixels, based on RLKA-woBkgnd.png.
+// Flyer composition and title geometry in staged canvas pixels.
 export const posterLayout = {
   width: 1246,
   illustrationTop: 72,
