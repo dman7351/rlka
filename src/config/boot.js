@@ -2,7 +2,7 @@
 export const bootConfig = {
   logo: 'assets/images/RLKA logo.png',
   buttonLabel: 'KNIIIFFEE!',
-  hint: 'POWER ON',
+  hint: 'SYSTEM READY',
   fadeMs: 600,
   transitionMs: 650,
   assetTimeoutMs: 10000,

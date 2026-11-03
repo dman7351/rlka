@@ -16,6 +16,7 @@ uniform sampler2D u_background;
 uniform sampler2D u_boot;
 uniform float u_bootReveal;
 uniform float u_bootOpacity;
+uniform float u_bootShift;
 uniform float u_bootDim;
 uniform sampler2D u_frame;
 uniform vec4 u_frameRect;
@@ -49,6 +50,16 @@ vec3 ditherText(vec3 color, vec2 uv) {
 bool insideRect(vec2 p, vec4 rect) {
   return rect.z > 0.0 && rect.w > 0.0 && all(greaterThanEqual(p, rect.xy)) && all(lessThanEqual(p, rect.xy + rect.zw));
 }
+float lockHash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+float lockNoise(vec2 p) {
+  vec2 cell = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(lockHash(cell), lockHash(cell + vec2(1.0, 0.0)), f.x),
+             mix(lockHash(cell + vec2(0.0, 1.0)), lockHash(cell + vec2(1.0)), f.x), f.y);
+}
 void main() {
   vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
   vec4 startup = vec4(0.0);
@@ -62,6 +73,14 @@ void main() {
     return;
   }
   float settling = step(0.001, u_bootReveal) * pow(1.0 - u_bootReveal, 2.0);
+  // A one-shot signal lock; no displacement is applied to the settled poster.
+  if (u_bootReveal < 1.0) {
+    float tick = floor(u_bootReveal * 19.0);
+    float rowShift = lockNoise(vec2(uv.y * 18.0, tick * .71)) - .5;
+    float tearY = mix(.58, .91, lockHash(vec2(tick, 7.0)));
+    float tear = smoothstep(tearY - .025, tearY, uv.y);
+    uv.x += (rowShift + tear * (lockHash(vec2(tick, 3.0)) - .5)) * u_bootShift * settling;
+  }
   vec3 blue = u_baseBlue;
   vec3 bg = backgroundAt(uv);
   // Coarse row integral: brightness changes the phase of a spatial carrier.

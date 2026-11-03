@@ -46,6 +46,7 @@ export const screenConfig = {
   fps: 24,
   maxDpr: 1.25,
   maxPixels: 1200000,
+  bootShift: 0,
   bootDim: 0.16,
   display: {
     hardBloomPix: -1.8,
