@@ -31,9 +31,8 @@ uniform float u_brightBoost;
 uniform float u_hardBloomPix;
 uniform float u_hardBloomScan;
 uniform float u_bloomAmount;
-uniform vec4 u_textTop;
-uniform vec4 u_textBottom;
-uniform float u_textProtection;
+uniform float u_bottomSignalMix;
+uniform float u_bottomSignalHeight;
 uniform float u_rollStrength;
 uniform float u_rollWidth;
 uniform float u_rollSeconds;
@@ -49,21 +48,19 @@ ${adjust}
 `;
 shader = shader.replace('void main(void)', additions + '\nvoid main(void)');
 shader = shader.replace('finalColor = texture2D(u_source, vTextureCoord);', `
-  vec4 clean = texture2D(u_source, vTextureCoord);
-  vec3 picture = mix(clean.rgb, texture2D(u_signal, vTextureCoord).rgb, u_signalMix);
+  vec2 pictureCoord = vTextureCoord;
+  vec4 clean = texture2D(u_source, pictureCoord);
+  float bottom = 1.0 - smoothstep(0.0, max(.001, u_bottomSignalHeight), pictureCoord.y);
+  float signalAmount = mix(u_signalMix, max(u_signalMix, u_bottomSignalMix), bottom);
+  vec3 picture = mix(clean.rgb, texture2D(u_signal, pictureCoord).rgb, signalAmount);
   if (u_bloomAmount > 0.0) {
-  float dst = Dist(vTextureCoord).y;
+  float dst = Dist(pictureCoord).y;
   float weight = Gaus(dst - 2.0, u_hardBloomScan) + Gaus(dst - 1.0, u_hardBloomScan)
                + Gaus(dst, u_hardBloomScan) + Gaus(dst + 1.0, u_hardBloomScan)
                + Gaus(dst + 2.0, u_hardBloomScan);
-  picture = ToSrgb((ToLinear(picture) + Bloom(vTextureCoord) * u_bloomAmount) / (1.0 + weight * u_bloomAmount));
+  picture = ToSrgb((ToLinear(picture) + Bloom(pictureCoord) * u_bloomAmount) / (1.0 + weight * u_bloomAmount));
   }
-  vec2 screen = vec2(vTextureCoord.x, 1.0 - vTextureCoord.y);
-  vec2 a = step(u_textTop.xy, screen) * step(screen, u_textTop.xy + u_textTop.zw);
-  vec2 b = step(u_textBottom.xy, screen) * step(screen, u_textBottom.xy + u_textBottom.zw);
-  float region = max(a.x * a.y, b.x * b.y);
-  float ink = (1.0 - smoothstep(.2, .55, dot(clean.rgb, vec3(.299, .587, .114)))) * clean.a * region * u_textProtection;
-  finalColor = vec4(mix(picture, min(picture, clean.rgb), ink), 1.0);
+  finalColor = vec4(picture, 1.0);
 `);
 // A separate, gentle filmed-screen band changes brightness, not sample position.
 shader = shader.replace(/\n}\s*$/, `

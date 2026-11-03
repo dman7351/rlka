@@ -44,7 +44,7 @@ The original shaders and license are retained in vendor/pixi-crt/.
 The distributed license is public/assets/effects/CRTFilter-LICENSE.txt.
 The WebGL adapter in src/effects/shaders/screen.js changes GLSL syntax/uniform
 names, combines the filters into one presentation pass, and adds project color
-grading, text protection and a rolling brightness band.
+grading and a rolling brightness band.
 The PixiJS application engine is not distributed.
 
 ## PxPlus IBM VGA 9x14

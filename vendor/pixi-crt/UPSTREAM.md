@@ -12,7 +12,7 @@
 adapts syntax/uniform names to WebGL 1 and uses the existing animated line,
 noise and vignette functions without the PixiJS scene engine dependency.
 Project additions mix in the ntsc-rs output, reuse Lottes' normalized glow,
-protect dark glyph interiors, and add a gentle filmed-screen brightness band.
+and add a gentle filmed-screen brightness band.
 This display shader is a visual CRT treatment, not a physical phosphor model.
 
 `adjustment.frag` is also vendored unchanged. Its shader main body is adapted to

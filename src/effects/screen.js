@@ -27,7 +27,6 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
   let lastSource = -Infinity;
   let still;
   let stillContext;
-  let textRegions;
   let disposed = false;
   let processor;
   let signalTextureWidth = 0;
@@ -42,6 +41,10 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
   const maxViewport = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
   const posterWidth = poster.naturalWidth || poster.width;
   const posterHeight = poster.naturalHeight || poster.height;
+  const crop = config.foregroundBounds;
+  const cropUV = [crop.x / posterWidth, crop.y / posterHeight, crop.width / posterWidth, crop.height / posterHeight];
+  const bottomMix = config.ntsc.tracking_noise || config.ntsc.head_switching ? config.bottomSignalMix : config.signalMix;
+  const signalEnabled = config.signalMix > 0 || bottomMix > 0;
 
   function dispose() {
     disposed = true;
@@ -181,10 +184,10 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
   stage.append(canvas);
 
   function renderSource(time) {
-    const crop = config.foregroundBounds;
     const box = stage.querySelector('.screen-poster').getBoundingClientRect();
     const rect = stage.getBoundingClientRect();
     const frame = frameImage && !frameImage.hidden ? frameImage.getBoundingClientRect() : null;
+    const posterRect = [(box.left - rect.left) / width, (box.top - rect.top) / height, box.width / width, box.height / height];
     const scale = Math.min(1, (width / height) / (background.naturalWidth / background.naturalHeight));
     const backgroundScale = width / height > background.naturalWidth / background.naturalHeight
       ? [1, (background.naturalWidth / background.naturalHeight) / (width / height)]
@@ -193,12 +196,10 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       size: [sourceWidth, sourceHeight],
       bootReveal: boot?.reveal ?? 1,
       bootOpacity: boot?.opacity ?? 1,
-      bootShift: config.bootShift,
       bootDim: config.bootDim,
-      foreground: [(box.left - rect.left) / width, (box.top - rect.top) / height, box.width / width, box.height / height],
-      crop: [crop.x / posterWidth, crop.y / posterHeight, crop.width / posterWidth, crop.height / posterHeight],
+      foreground: posterRect, crop: cropUV,
       menuRect: stagedMenu?.menuRect || [0, 0, 0, 0],
-      dialogRect: stagedDialog?.rect(rect) || [0, 0, 0, 0],
+      dialogRect: stagedDialog?.visible ? stagedDialog.rect(rect) : [0, 0, 0, 0],
       frameRect: frame ? [(frame.left - rect.left) / width, (frame.top - rect.top) / height, frame.width / width, frame.height / height] : [0, 0, 0, 0],
       backgroundScale,
       backgroundAmount: config.backgroundAmount,
@@ -223,7 +224,7 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       renderSource(time);
       lastSource = now;
     }
-    if (config.signalMix > 0 && processor?.available && (!hasSignalFrame || signalRevision !== revision ||
+    if (signalEnabled && processor?.available && (!hasSignalFrame || signalRevision !== revision ||
         ((!motion && signalDirty) || (motion && now - lastSignalRequest >= processor.intervalMs)))) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, picture.f);
       const buffer = processor.inputBuffer(sourceWidth * sourceHeight * 4);
@@ -247,12 +248,12 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       rollStrength: config.rollStrength, rollWidth: config.rollWidth,
       rollSeconds, rollTime: cyclePhase(time, 1 / rollSeconds) * rollSeconds,
       signalMix: hasSignalFrame ? config.signalMix : 0,
+      bottomSignalMix: hasSignalFrame ? bottomMix : 0,
+      bottomSignalHeight: config.bottomSignalHeight,
       blueCorrection: config.blueCorrection, blueGain: config.blueGain,
       colorGamma: config.colorGamma, colorContrast: config.colorContrast,
       colorSaturation: config.colorSaturation, colorBrightness: config.colorBrightness,
-      textTop: textRegions[0], textBottom: textRegions[1],
-      textProtection: config.textProtection,
-    }, [['source', hasSignalFrame && config.signalMix > 0 ? signalSource : picture.t], ['signal', signal]]);
+    }, [['source', hasSignalFrame && signalEnabled ? signalSource : picture.t], ['signal', signal]]);
     if (!motion || snapshotPresentation) {
       // Native/fixed UI can invalidate the WebGL compositor layer in
       // Chromium. Copy immediately after drawing, before its buffer is freed.
@@ -298,14 +299,6 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
     width = rect.width;
     height = rect.height;
     if (!width || !height) return;
-    const crop = config.foregroundBounds;
-    const box = stage.querySelector('.screen-poster').getBoundingClientRect();
-    textRegions = config.textBounds.map(region => [
-      (box.left - rect.left + (region.x - crop.x) / crop.width * box.width) / width,
-      (box.top - rect.top + (region.y - crop.y) / crop.height * box.height) / height,
-      region.width / crop.width * box.width / width,
-      region.height / crop.height * box.height / height,
-    ]);
     const dpr = Math.min(devicePixelRatio || 1, config.maxDpr, Math.sqrt(config.maxPixels / (width * height)), maxViewport[0] / width, maxViewport[1] / height);
     const outWidth = Math.max(1, Math.round(width * dpr));
     const outHeight = Math.max(1, Math.round(height * dpr));
@@ -409,7 +402,7 @@ export function createScreenRenderer(stage, poster, background, config, onLost, 
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, menuTexture);
       gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, menuUpload);
-      // Hold the previous complete picture until the new selection is processed.
+      // Keep the last complete processed frame until the updated UI is ready.
       dirty = true;
       signalDirty = true;
       revision++;

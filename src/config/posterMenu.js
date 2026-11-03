@@ -13,12 +13,12 @@ export const posterMenu = {
   fontSize: 72,
   fieldStyles: { timestamp: { labelFontSize: 64 } },
   bill: {
-    fontSize: 72, guestSize: 80, detailsSize: 52,
+    fontSize: 72, guestSize: 80, detailsSize: 60,
     lineHeight: .94, padding: 12, panelPadding: 8, gap: 0,
     stagger: [0, .28, 1, 0],
     accent: { text: '░░▒▒', width: 200, gap: 24 },
   },
-  footer: { gap: 24, height: 180, fontSize: 52, lineHeight: 52, bannerFontSize: 56, bannerWidth: 650, bannerHeight: 100, bannerBorder: 4, bannerPadding: 12 },
+  footer: { gap: 24, height: 180, fontSize: 60, lineHeight: 52, bannerFontSize: 60, bannerWidth: 650, bannerHeight: 100, bannerBorder: 4, bannerPadding: 12 },
   white: '#ffffff',
   blue: '#0a208d',
 };
